@@ -22,7 +22,6 @@ public class Main {
 
         Dotenv dotenv = Dotenv.load();
 
-        String shortURL = encodeIDtoBase62(generateUniqueID());
         String testInputURL = "https://www.google.com/maps";
         String inputURL = "https://www.youtube.com/";
         String uri = dotenv.get("MONGODB_URI");
@@ -32,13 +31,18 @@ public class Main {
         try (MongoClient mongoClient = MongoClients.create(uri)) {
             MongoDatabase database = mongoClient.getDatabase("short_urls");
             MongoCollection<Document> collection = database.getCollection("short_urls");
-            Document doc = collection.find(eq("long_url", testInputURL)).first();
+            Document doc = collection.find(eq("long_url", inputURL)).first();
             if (doc != null) {
                 JSONObject obj = new JSONObject(doc.toJson());
                 // Gets the shortURL from database
                 System.out.println(obj.get("short_url"));
             } else {
                 System.out.println("No matching documents found.");
+                long noOfDocuments = collection.countDocuments();
+                System.out.println("encoded shortURL:");
+                System.out.println(encodeIDtoBase62(generateUniqueID((int) noOfDocuments)));
+                // IMPLEMENT A FUNCTION HERE TO PUSH SHORTENED URL TO DATABASE
+                // pushToDatabase(id, short_url, long_url)
             }
         }
     }
@@ -47,24 +51,21 @@ public class Main {
         // Base 62 encoding works by converting each character in the url to its ASCII number and then mapping it to the corresponding base62 character
         // First must generate unique id, then convert it to base62 7-digit number which will be the shortened url, finally store the id, shortURL and longURL in a database
         String stringID = Integer.toString(id);
-        System.out.println(stringID);
         StringBuilder base62URL = new StringBuilder();
         while (id > 0) {
             int remainder = id % 62;
             base62URL.insert(0, base62EncodingTable.charAt(remainder));
             id = id / 62;
         }
-        System.out.println(base62URL);
         return String.valueOf(base62URL);
     }
 
 
-    public static int generateUniqueID() {
+    public static int generateUniqueID(int noOfDocuments) {
         //Generate a unique
         // This will be auto-incrementing, so get last id and add 1
-        // for example there are 500 entries in the database already
-        int lastID = 500;
-        return lastID + 1;
+        // for example there are 5000 entries in the database already
+        return noOfDocuments + 5000 + 1;
     }
 
 }
