@@ -1,14 +1,15 @@
 package org.example;
 
-import static com.mongodb.client.model.Filters.eq;
-
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import org.bson.Document;
-
 import io.github.cdimascio.dotenv.Dotenv;
+import org.bson.Document;
+import org.json.JSONObject;
+
+
+import static com.mongodb.client.model.Filters.eq;
 
 
 // Press Shift twice to open the Search Everywhere dialog and type `show whitespaces`,
@@ -19,21 +20,23 @@ public class Main {
 
     public static void main(String[] args) {
 
-        System.out.println("url_shortener");
-
-
         Dotenv dotenv = Dotenv.load();
 
         String shortURL = encodeIDtoBase62(generateUniqueID());
         String testInputURL = "https://www.google.com/maps";
         String inputURL = "https://www.youtube.com/";
         String uri = dotenv.get("MONGODB_URI");
+        // Try to find long url in the database
+        // If match then return the shortURL
+        // If no match then generate a new shortURL and push to the database
         try (MongoClient mongoClient = MongoClients.create(uri)) {
             MongoDatabase database = mongoClient.getDatabase("short_urls");
             MongoCollection<Document> collection = database.getCollection("short_urls");
             Document doc = collection.find(eq("long_url", testInputURL)).first();
             if (doc != null) {
-                System.out.println(doc.toJson());
+                JSONObject obj = new JSONObject(doc.toJson());
+                // Gets the shortURL from database
+                System.out.println(obj.get("short_url"));
             } else {
                 System.out.println("No matching documents found.");
             }
