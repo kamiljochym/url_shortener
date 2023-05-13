@@ -1,13 +1,15 @@
 package org.example;
 
+import com.mongodb.MongoException;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.result.InsertOneResult;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.json.JSONObject;
-
 
 import static com.mongodb.client.model.Filters.eq;
 
@@ -23,7 +25,8 @@ public class Main {
         Dotenv dotenv = Dotenv.load();
 
         String testInputURL = "https://www.google.com/maps";
-        String inputURL = "https://www.youtube.com/";
+//        String inputURL = "https://www.youtube.com/";
+        String inputURL = "https://facebook.com/";
         String uri = dotenv.get("MONGODB_URI");
         // Try to find long url in the database
         // If match then return the shortURL
@@ -37,13 +40,26 @@ public class Main {
                 // Gets the shortURL from database
                 System.out.println(obj.get("short_url"));
             } else {
-                System.out.println("No matching documents found.");
+                System.out.println("Pushing to database (not active yet)");
                 long noOfDocuments = collection.countDocuments();
-                System.out.println("encoded shortURL:");
-                System.out.println(encodeIDtoBase62(generateUniqueID((int) noOfDocuments)));
+                int id = generateUniqueID((int) noOfDocuments);
+                String shortUrl = encodeIDtoBase62(id);
                 // IMPLEMENT A FUNCTION HERE TO PUSH SHORTENED URL TO DATABASE
-                // pushToDatabase(id, short_url, long_url)
+                pushUrlToDatabase(id, shortUrl, inputURL, collection);
             }
+        }
+    }
+
+    public static void pushUrlToDatabase(int id, String shortUrl, String longUrl, MongoCollection<Document> collection) {
+        try {
+            InsertOneResult result = collection.insertOne(new Document()
+                    .append("_id", new ObjectId())
+                    .append("id", id)
+                    .append("short_url", shortUrl)
+                    .append("long_url", longUrl));
+            System.out.println("Success! Inserted document id: " + result.getInsertedId());
+        } catch (MongoException me) {
+            System.err.println("Unable to insert due to an error: " + me);
         }
     }
 
