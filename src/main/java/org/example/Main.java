@@ -12,8 +12,6 @@ import org.bson.types.ObjectId;
 import org.json.JSONObject;
 
 import static com.mongodb.client.model.Filters.eq;
-
-
 // Press Shift twice to open the Search Everywhere dialog and type `show whitespaces`,
 // then press Enter. You can now see whitespace characters in your code.
 public class Main {
@@ -28,9 +26,10 @@ public class Main {
 //        String inputURL = "https://www.youtube.com/";
         String inputURL = "https://facebook.com/";
         String uri = dotenv.get("MONGODB_URI");
-        // Try to find long url in the database
-        // If match then return the shortURL
-        // If no match then generate a new shortURL and push to the database
+//        fetchLongUrlFromDatabase("fjsdklgasig");
+//         Try to find long url in the database
+//         If match then return the shortURL
+//         If no match then generate a new shortURL and push to the database
         try (MongoClient mongoClient = MongoClients.create(uri)) {
             MongoDatabase database = mongoClient.getDatabase("short_urls");
             MongoCollection<Document> collection = database.getCollection("short_urls");
@@ -48,6 +47,26 @@ public class Main {
                 pushUrlToDatabase(id, shortUrl, inputURL, collection);
             }
         }
+    }
+    public static String fetchLongUrlFromDatabase(String shortUrl) {
+
+        Dotenv dotenv = Dotenv.load();
+        String uri = dotenv.get("MONGODB_URI");
+        String returnedUrl = "";
+        try (MongoClient mongoClient = MongoClients.create(uri)) {
+            MongoDatabase database = mongoClient.getDatabase("short_urls");
+            MongoCollection<Document> collection = database.getCollection("short_urls");
+            Document doc = collection.find(eq("short_url", shortUrl)).first();
+            if (doc != null) {
+                JSONObject obj = new JSONObject(doc.toJson());
+                // Gets the shortURL from database
+                System.out.println(obj.get("long_url"));
+                returnedUrl = (String) obj.get("long_url");
+            } else {
+                System.out.println("error, cannot find shortUrl in database");
+            }
+        }
+        return returnedUrl;
     }
 
     public static void pushUrlToDatabase(int id, String shortUrl, String longUrl, MongoCollection<Document> collection) {
